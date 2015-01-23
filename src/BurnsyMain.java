@@ -2,11 +2,29 @@ import javax.swing.*;
 import java.awt.*;
  
 public class BurnsyMain extends JFrame {
-    private Image titleImage;
-    private int x, y;
-
-    public void paint(Graphics g) {
-        g.drawImage(titleImage,0,0,this);
+	private Image titleImage;
+    private int x, y, state;
+	private GameCanvas burnsyCanvas;
+	
+	public void startGame() {
+		setState(1);
+		try {
+			new Thread(new Runnable() {
+				public void run() {
+					animate();
+				}
+			}).start();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+	
+	public void setState(int s) {
+		state = s;
+	}
+	
+	public int getState() {
+		return state;
 	}
 
     public BurnsyMain() {
@@ -17,30 +35,63 @@ public class BurnsyMain extends JFrame {
 
         x = 0;
 		y = 100;
-
-        JButton start = new JButton("Start!");
-        getContentPane().add(start);
-        start.setSize(100,50);
-        start.setVisible(true);
+		
+		state = 0;
+		
+		burnsyCanvas = new GameCanvas();
+		burnsyCanvas.addMouseListener(new MouseClickDetector(this));
+		getContentPane().add(burnsyCanvas);
     }
-     
+
 	public static void main(String[] args) {
 		BurnsyMain f = new BurnsyMain();
 		f.setVisible(true);
-		f.animate();
 	}
-
-
 
 	   public void animate() {
 		while (true) {
-			repaint();
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					burnsyCanvas.repaint();
+				}
+			});
 			try {
-				Thread.sleep(100);
+				Thread.sleep(30);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
 		}
 	}
+	
+	private class GameCanvas extends Canvas {
+		private Image dbImage;
+		private Graphics dbg; 
 
+		public void update(Graphics g) {
+			if (dbImage == null) {
+				dbImage = createImage(this.getSize().width, this.getSize().height);
+				dbg = dbImage.getGraphics();
+			}
+
+			dbg.setColor(getBackground());
+			dbg.fillRect(0, 0, this.getSize().width, this.getSize().height);
+
+			dbg.setColor(getForeground());
+			paint(dbg);
+
+			g.drawImage(dbImage, 0, 0, this); 
+		}
+
+		public void paint (Graphics g) {
+			switch (state) {
+				case 0:
+					g.drawImage(titleImage, 0, 0, this);
+				break;
+				case 1:
+					g.setColor(Color.WHITE);
+					g.fillRect(0, 0, 640, 480);
+				break;
+			}
+		}
+	}
 }
